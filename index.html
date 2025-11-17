@@ -330,7 +330,11 @@
           <h3>Calorie estimator</h3>
           <div class="badge">Prototype · v0.1</div>
         </div>
-
+  <label for="barcode">Lookup by barcode (optional)</label>
+  <div class="field-row">
+    <input id="barcode" type="text" placeholder="Scan or type barcode" />
+    <button type="button" id="lookupButton">Lookup</button>
+  </div>
         <label for="abv">Alcohol by volume (ABV %)</label>
         <input id="abv" type="number" min="0" max="100" step="0.1" placeholder="e.g. 12" />
 
