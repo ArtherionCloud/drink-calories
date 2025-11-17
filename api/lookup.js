@@ -106,3 +106,5 @@ async function lookupByBarcode() {
 }
 
 document.getElementById("lookupButton")?.addEventListener("click", lookupByBarcode);
+
+add lookup api
