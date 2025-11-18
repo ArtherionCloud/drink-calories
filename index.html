@@ -6,24 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta
     name="description"
-    content="SipCal helps you estimate calories in wine, beer and spirits based on ABV and serving size."
+    content="SipCal gives you a fast, realistic estimate of calories in your wine, beer, or spirits using ABV and serving size."
   />
   <style>
     * { box-sizing: border-box; }
 
     :root {
-      --bg: #050816;
-      --bg-card: radial-gradient(circle at top left, #171a2b, #050816);
+      --bg: #040814;
+      --bg-soft: radial-gradient(circle at top left, #17192b, #050816);
       --text: #f5f5f7;
       --muted: rgba(245, 245, 247, 0.72);
-      --border-subtle: rgba(255, 255, 255, 0.06);
-      --border-strong: rgba(255, 255, 255, 0.16);
-      --accent-1: #50e3c2;
-      --accent-2: #7fb3ff;
+      --line-soft: rgba(255, 255, 255, 0.06);
+      --line-strong: rgba(255, 255, 255, 0.14);
+      --accent: #7fd1ff;
+      --accent-strong: #4ff0c6;
       --danger: #ff6b6b;
       --radius-lg: 20px;
-      --radius-full: 999px;
-      --shadow-card: 0 22px 60px rgba(0, 0, 0, 0.7);
+      --radius-pill: 999px;
+      --shadow-card: 0 20px 45px rgba(0, 0, 0, 0.65);
     }
 
     body {
@@ -31,448 +31,490 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
         sans-serif;
       background:
-        radial-gradient(circle at top left, #1a2340 0, #050816 55%, #02030a 100%);
+        radial-gradient(circle at 10% -10%, rgba(127, 209, 255, 0.18), transparent 55%),
+        radial-gradient(circle at 90% 120%, rgba(79, 240, 198, 0.15), transparent 55%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
-    .page-shell {
-      min-height: 100vh;
+    header {
+      padding: 1.4rem 1.5rem 0.7rem;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .header-inner {
+      max-width: 1040px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      position: relative;
-      overflow: hidden;
+      gap: 0.45rem;
+      align-items: flex-start;
     }
 
-    /* floating glow */
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(60px);
-      opacity: 0.9;
-      pointer-events: none;
-    }
-
-    .orb-1 {
-      width: 280px;
-      height: 280px;
-      background: radial-gradient(circle, rgba(80, 227, 194, 0.7), transparent);
-      top: -80px;
-      left: -40px;
-    }
-
-    .orb-2 {
-      width: 260px;
-      height: 260px;
-      background: radial-gradient(circle, rgba(127, 179, 255, 0.9), transparent);
-      bottom: -120px;
-      right: -60px;
-    }
-
-    header {
-      position: relative;
-      z-index: 1;
-      padding: 1.4rem 1.4rem 0.2rem;
-      display: flex;
-      justify-content: center;
-    }
-
-    .brand {
-      max-width: 1024px;
-      width: 100%;
+    .brand-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .brand-left {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
+      gap: 0.6rem;
     }
 
     .logo-circle {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background:
-        radial-gradient(circle at 30% 0%, #f4fbff, #7fb3ff 40%, #050816 90%);
+      background: radial-gradient(circle at 30% 0%, #e5f4ff, #3a7dff, #050816);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 700;
       color: #050816;
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
     }
 
-    .brand-title {
-      display: flex;
-      flex-direction: column;
-      gap: 0.18rem;
-    }
-
-    .brand-title h1 {
+    header h1 {
       margin: 0;
-      font-size: 1.6rem;
-      letter-spacing: 0.09em;
+      font-size: 1.7rem;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
     }
 
-    .brand-title span {
-      font-size: 0.82rem;
+    .tagline-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.86rem;
       color: var(--muted);
     }
 
-    .pill-header {
-      font-size: 0.75rem;
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line-soft);
+      padding: 0.15rem 0.6rem;
+      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.3);
+      font-size: 0.8rem;
       color: rgba(245, 245, 247, 0.7);
-      border-radius: var(--radius-full);
-      padding: 0.2rem 0.7rem;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(5, 8, 22, 0.5);
-      backdrop-filter: blur(10px);
-      display: none;
-    }
-
-    @media (min-width: 720px) {
-      .pill-header {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-      }
     }
 
     main {
-      position: relative;
-      z-index: 1;
       flex: 1;
-      display: flex;
-      justify-content: center;
-      padding: 1.1rem 1.4rem 2.5rem;
+      padding: 1.6rem 1.5rem 2.3rem;
     }
 
-    .layout {
-      width: 100%;
-      max-width: 1024px;
+    .main-inner {
+      max-width: 1040px;
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.4rem;
-      align-items: center;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 1.6rem;
     }
 
-    @media (min-width: 780px) {
-      .layout {
-        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+    @media (max-width: 800px) {
+      .main-inner {
+        grid-template-columns: 1fr;
+      }
+      header {
+        padding: 1.1rem 1.1rem 0.7rem;
+      }
+      main {
+        padding: 1.3rem 1.1rem 2.1rem;
+      }
+      .header-inner {
+        align-items: flex-start;
       }
     }
 
     .hero {
-      padding: 1.4rem 1.1rem 1.2rem;
       border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      background:
-        linear-gradient(140deg, rgba(80, 227, 194, 0.06), rgba(127, 179, 255, 0.18)),
-        radial-gradient(circle at top left, #14182b, #050816);
-      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.65);
-    }
-
-    .hero-kicker {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: rgba(223, 240, 255, 0.7);
-      margin-bottom: 0.35rem;
+      padding: 1.5rem 1.4rem;
+      background: linear-gradient(
+          135deg,
+          rgba(80, 227, 194, 0.08),
+          rgba(120, 169, 255, 0.15)
+        ),
+        var(--bg-soft);
+      border: 1px solid var(--line-soft);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
     }
 
     .hero h2 {
-      margin: 0;
-      font-size: 1.7rem;
-      line-height: 1.25;
+      margin: 0 0 0.5rem;
+      font-size: 1.55rem;
+    }
+
+    .hero h2 span {
+      font-weight: 400;
+      color: var(--accent);
     }
 
     .hero p {
-      margin: 0.7rem 0 0.9rem;
+      margin: 0;
       font-size: 0.95rem;
       color: var(--muted);
       max-width: 30rem;
     }
 
-    .hero-highlights {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      margin-bottom: 0.4rem;
+    .hero-grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
     }
 
-    .chip {
+    .hero-stat {
+      padding: 0.55rem 0.7rem;
+      border-radius: 14px;
+      border: 1px solid var(--line-soft);
+      background: rgba(5, 8, 22, 0.65);
+      font-size: 0.82rem;
+    }
+
+    .hero-stat-title {
       font-size: 0.78rem;
-      padding: 0.25rem 0.7rem;
-      border-radius: var(--radius-full);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(5, 8, 22, 0.6);
-      color: rgba(245, 245, 247, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.8;
+    }
+
+    .hero-stat-value {
+      margin-top: 0.16rem;
+      font-weight: 600;
     }
 
     .hero-note {
+      margin-top: 0.8rem;
       font-size: 0.8rem;
-      color: rgba(245, 245, 247, 0.7);
+      color: rgba(245, 245, 247, 0.62);
     }
 
     .hero-note span {
       color: var(--danger);
     }
 
-    .card {
-      width: 100%;
-      background: var(--bg-card);
+    .hero-orbit {
+      position: absolute;
+      right: -40px;
+      bottom: -40px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 1px dashed rgba(127, 209, 255, 0.25);
+      opacity: 0.6;
+    }
+
+    .calculator-card {
       border-radius: var(--radius-lg);
-      padding: 1.5rem 1.4rem 1.3rem;
+      padding: 1.4rem 1.3rem 1.3rem;
+      background: var(--bg-soft);
+      border: 1px solid var(--line-soft);
       box-shadow: var(--shadow-card);
-      border: 1px solid var(--border-subtle);
     }
 
     .card-header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 0.6rem;
-      margin-bottom: 0.9rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      gap: 0.5rem;
     }
 
     .card-header h3 {
       margin: 0;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
     }
 
     .badge {
-      font-size: 0.75rem;
-      padding: 0.18rem 0.7rem;
-      border-radius: var(--radius-full);
-      border: 1px solid rgba(127, 179, 255, 0.7);
-      background: rgba(15, 26, 56, 0.8);
-      color: rgba(220, 236, 255, 0.9);
+      font-size: 0.76rem;
+      padding: 0.18rem 0.6rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(80, 227, 194, 0.75);
+      background: rgba(80, 227, 194, 0.08);
+      color: rgba(211, 249, 237, 0.9);
     }
 
     label {
       display: block;
-      margin-top: 0.75rem;
-      margin-bottom: 0.3rem;
-      font-size: 0.88rem;
-      color: rgba(245, 245, 247, 0.86);
+      margin-top: 0.7rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.86rem;
+      color: rgba(245, 245, 247, 0.9);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+
+    @media (max-width: 480px) {
+      .field-row {
+        grid-template-columns: 1fr;
+      }
     }
 
     input, select {
       width: 100%;
-      padding: 0.6rem 0.75rem;
-      border-radius: 12px;
-      border: 1px solid var(--border-strong);
-      background: rgba(5, 8, 22, 0.92);
+      padding: 0.6rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      background: rgba(5, 8, 22, 0.9);
       color: var(--text);
-      font-size: 0.93rem;
+      font-size: 0.92rem;
       outline: none;
       appearance: none;
     }
 
     input::placeholder {
-      color: rgba(245, 245, 247, 0.45);
+      color: rgba(245, 245, 247, 0.4);
     }
 
     input:focus, select:focus {
-      border-color: rgba(127, 179, 255, 0.95);
-      box-shadow: 0 0 0 1px rgba(127, 179, 255, 0.5);
+      border-color: rgba(120, 188, 255, 0.95);
+      box-shadow: 0 0 0 1px rgba(120, 188, 255, 0.45);
     }
 
-    .field-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.7rem;
+    .presets-label {
+      margin-top: 0.9rem;
+      font-size: 0.82rem;
+      color: rgba(245, 245, 247, 0.72);
     }
 
-    .quick-row {
-      margin-top: 0.65rem;
+    .presets {
+      margin-top: 0.35rem;
       display: flex;
       flex-wrap: wrap;
-      gap: 0.4rem;
-      font-size: 0.78rem;
+      gap: 0.45rem;
     }
 
-    .quick-btn {
-      padding: 0.3rem 0.6rem;
-      border-radius: var(--radius-full);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(5, 8, 22, 0.7);
-      color: rgba(245, 245, 247, 0.8);
+    .preset-btn {
+      padding: 0.3rem 0.7rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line-soft);
+      background: rgba(5, 8, 22, 0.8);
+      font-size: 0.78rem;
+      color: rgba(245, 245, 247, 0.88);
       cursor: pointer;
     }
 
-    .quick-btn:hover {
-      border-color: rgba(127, 179, 255, 0.9);
+    .preset-btn:hover {
+      border-color: rgba(127, 209, 255, 0.9);
     }
 
     button#calc {
-      margin-top: 1rem;
+      margin-top: 1.05rem;
       width: 100%;
-      padding: 0.8rem 0.7rem;
-      border-radius: var(--radius-full);
+      padding: 0.75rem 0.7rem;
+      border-radius: var(--radius-pill);
       border: none;
-      font-size: 0.96rem;
+      font-size: 0.95rem;
       font-weight: 600;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent));
       color: #050816;
       cursor: pointer;
     }
 
     button#calc:active {
       transform: translateY(1px);
-      filter: brightness(0.96);
+      filter: brightness(0.97);
     }
 
     .results {
-      margin-top: 1.1rem;
-      padding: 0.95rem;
-      border-radius: 14px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--border-subtle);
-      font-size: 0.92rem;
+      margin-top: 1rem;
+      padding: 0.8rem 0.85rem;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--line-soft);
+      font-size: 0.9rem;
     }
 
     .results h4 {
-      margin: 0 0 0.4rem;
-      font-size: 1rem;
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
     }
 
     .results p {
       margin: 0.15rem 0;
     }
 
-    .results .tagline {
+    .results-subtext {
+      margin-top: 0.4rem;
       font-size: 0.78rem;
-      color: rgba(245, 245, 247, 0.7);
-      margin-top: 0.45rem;
+      color: rgba(245, 245, 247, 0.62);
     }
 
     footer {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      padding: 0.9rem 1rem 1.3rem;
+      padding: 0.85rem 1.5rem 1.2rem;
       font-size: 0.78rem;
       color: rgba(245, 245, 247, 0.6);
+    }
+
+    .footer-inner {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-inner span strong {
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <div class="page-shell">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
+  <header>
+    <div class="header-inner">
+      <div class="brand-row">
+        <div class="logo-circle">SC</div>
+        <h1>SipCal</h1>
+      </div>
+      <div class="tagline-row">
+        <span>Instant alcohol calorie estimation.</span>
+        <span class="pill">⚡ Runs in your browser · No login</span>
+        <span class="pill">Awareness, not judgment.</span>
+      </div>
+    </div>
+  </header>
 
-    <header>
-      <div class="brand">
-        <div class="brand-left">
-          <div class="logo-circle">SC</div>
-          <div class="brand-title">
-            <h1>SipCal</h1>
-            <span>Instant alcohol calorie estimation</span>
+  <main>
+    <div class="main-inner">
+      <!-- Left: story / value prop -->
+      <section class="hero">
+        <h2>See the story behind every <span>pour.</span></h2>
+        <p>
+          SipCal gives you a quick, realistic calorie estimate for wine, beer, and spirits using
+          ABV, bottle size, and serving size. A small check-in before a big night out or simple
+          calorie tracking.
+        </p>
+
+        <div class="hero-grid">
+          <div class="hero-stat">
+            <div class="hero-stat-title">Works with</div>
+            <div class="hero-stat-value">Wine · Beer · Spirits</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-title">Based on</div>
+            <div class="hero-stat-value">ABV &amp; sugar estimate</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-title">Data</div>
+            <div class="hero-stat-value">No accounts · nothing saved</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-title">Use case</div>
+            <div class="hero-stat-value">Awareness &amp; planning</div>
           </div>
         </div>
-        <div class="pill-header">
-          ⚡ Runs in your browser · No login
+
+        <p class="hero-note">
+          <span>Note:</span> This is a simple estimator based on alcohol and approximate sugar.
+          Actual labels can differ by brand and recipe.
+        </p>
+
+        <div class="hero-orbit"></div>
+      </section>
+
+      <!-- Right: calculator -->
+      <section class="calculator-card">
+        <div class="card-header">
+          <h3>Calorie estimator</h3>
+          <div class="badge">Prototype · v2.0</div>
         </div>
-      </div>
-    </header>
 
-    <main>
-      <div class="layout">
-        <!-- LEFT: copy -->
-        <section class="hero">
-          <div class="hero-kicker">Awareness, not judgment</div>
-          <h2>See the story behind every pour.</h2>
-          <p>
-            SipCal gives you a quick, realistic calorie estimate for wine, beer,
-            and spirits using ABV, bottle size and serving size. A small check-in
-            before a big night out or simple calorie tracking.
+        <label for="abv">Alcohol by volume (ABV %)</label>
+        <input id="abv" type="number" min="0" max="100" step="0.1" placeholder="e.g. 12" />
+
+        <div class="field-row">
+          <div>
+            <label for="volume">Bottle size (ml)</label>
+            <input id="volume" type="number" min="50" step="10" placeholder="e.g. 750" />
+          </div>
+          <div>
+            <label for="glass">Glass size (ml)</label>
+            <input id="glass" type="number" min="30" step="5" value="150" />
+          </div>
+        </div>
+
+        <label for="style">Style / sweetness</label>
+        <select id="style">
+          <option value="dry">Dry (most table wine, light beer)</option>
+          <option value="offdry">Off-dry / semi-sweet</option>
+          <option value="sweet">Sweet wine, liqueur, dessert</option>
+        </select>
+
+        <div class="presets-label">Presets</div>
+        <div class="presets">
+          <button type="button" class="preset-btn" data-preset="wine">Wine · 750 ml</button>
+          <button type="button" class="preset-btn" data-preset="beer">Beer · 330 ml</button>
+          <button type="button" class="preset-btn" data-preset="shot">Shot · 44 ml</button>
+        </div>
+
+        <button id="calc">Estimate calories</button>
+
+        <div class="results" id="results" style="display:none;">
+          <h4>Your estimate</h4>
+          <p id="perGlass"></p>
+          <p id="perBottle"></p>
+          <p class="results-subtext">
+            Based on 1 ml pure alcohol ≈ 0.789 g and 7 kcal per gram, plus a small sugar adjustment
+            by style.
           </p>
+        </div>
+      </section>
+    </div>
+  </main>
 
-          <div class="hero-highlights">
-            <div class="chip">Works with wine, beer & spirits</div>
-            <div class="chip">ABV-based calculation</div>
-            <div class="chip">No accounts, no data stored</div>
-          </div>
-
-          <p class="hero-note">
-            <span>Note:</span> This is a simple estimator based on alcohol and
-            approximate sugar. Actual labels can differ by brand and recipe.
-          </p>
-        </section>
-
-        <!-- RIGHT: calculator -->
-        <section class="card">
-          <div class="card-header">
-            <h3>Calorie estimator</h3>
-            <div class="badge">Prototype · v2.0</div>
-          </div>
-
-          <label for="abv">Alcohol by volume (ABV %)</label>
-          <input id="abv" type="number" min="0" max="100" step="0.1" placeholder="e.g. 12" />
-
-          <div class="field-row">
-            <div>
-              <label for="volume">Bottle size (ml)</label>
-              <input id="volume" type="number" min="50" step="10" placeholder="e.g. 750" />
-            </div>
-            <div>
-              <label for="glass">Glass size (ml)</label>
-              <input id="glass" type="number" min="30" step="5" value="150" />
-            </div>
-          </div>
-
-          <label for="style">Style / sweetness</label>
-          <select id="style">
-            <option value="dry">Dry (most table wine, light beer)</option>
-            <option value="offdry">Off-dry / semi-sweet</option>
-            <option value="sweet">Sweet wine, liqueur, dessert</option>
-          </select>
-
-          <div class="quick-row">
-            <span style="opacity:0.8;">Presets:</span>
-            <button type="button" class="quick-btn" data-abv="12" data-volume="750" data-glass="150">Wine 750 ml</button>
-            <button type="button" class="quick-btn" data-abv="5" data-volume="330" data-glass="330">Beer 330 ml</button>
-            <button type="button" class="quick-btn" data-abv="40" data-volume="750" data-glass="44">Shot 44 ml</button>
-          </div>
-
-          <button id="calc">Estimate calories</button>
-
-          <div class="results" id="results" style="display:none;">
-            <h4>Your estimate</h4>
-            <p id="perGlass"></p>
-            <p id="perBottle"></p>
-            <p class="tagline">
-              Based on 1 ml pure alcohol ≈ 0.789 g and 7 kcal per gram, plus a
-              small sugar adjustment by style.
-            </p>
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <footer>
-      © <span id="year"></span> SipCal · Prototype only – not medical or nutrition advice. Created by Artherion
-    </footer>
-  </div>
+  <footer>
+    <div class="footer-inner">
+      <span>© <span id="year"></span> SipCal · Prototype only – not medical or nutrition advice.</span>
+      <span>Created by <strong>Artherion</strong></span>
+    </div>
+  </footer>
 
   <script>
     function estimateSugarExtra(style, volumeMl) {
       // crude sugar bump per bottle (kcal) based on style
-      let per100ml = 0; // kcal per 100ml
-      if (style === "offdry") per100ml = 12;  // mildly sweet
-      if (style === "sweet") per100ml = 30;   // dessert-level sweetness
+      let per100ml = 0;
+      if (style === "offdry") per100ml = 12;  // mild sweetness
+      if (style === "sweet") per100ml = 30;   // dessert-like
       return (per100ml * volumeMl) / 100;
+    }
+
+    function setPreset(preset) {
+      const abvInput = document.getElementById("abv");
+      const volumeInput = document.getElementById("volume");
+      const glassInput = document.getElementById("glass");
+      const styleSelect = document.getElementById("style");
+
+      if (preset === "wine") {
+        abvInput.value = 12;
+        volumeInput.value = 750;
+        glassInput.value = 150;
+        styleSelect.value = "dry";
+      } else if (preset === "beer") {
+        abvInput.value = 5;
+        volumeInput.value = 330;
+        glassInput.value = 330;
+        styleSelect.value = "dry";
+      } else if (preset === "shot") {
+        abvInput.value = 40;
+        volumeInput.value = 44;
+        glassInput.value = 44;
+        styleSelect.value = "sweet"; // many liqueurs are sugary
+      }
     }
 
     function calculate() {
@@ -482,36 +524,33 @@
       const glass = parseFloat(document.getElementById("glass").value) || 150;
 
       if (isNaN(abv) || isNaN(volume) || abv <= 0 || volume <= 0) {
-        alert("Please enter a valid ABV and bottle size.");
+        alert("Enter a valid ABV and bottle size.");
         return;
       }
 
-      // 1 ml pure alcohol ≈ 0.789 g; 1 g alcohol ≈ 7 kcal
+      // alcohol calories: abv% * volume_ml * density (0.789 g/ml) * 7 kcal/g / 100
       const alcoholCalories = (abv * volume * 0.789 * 7) / 100;
       const sugarCalories = estimateSugarExtra(style, volume);
       const totalBottle = alcoholCalories + sugarCalories;
       const perGlass = totalBottle * (glass / volume);
 
       const results = document.getElementById("results");
-      document.getElementById("perGlass").textContent =
-        `Per ${glass.toFixed(0)} ml serving: ~${perGlass.toFixed(0)} kcal`;
-      document.getElementById("perBottle").textContent =
-        `Per ${volume.toFixed(0)} ml bottle: ~${totalBottle.toFixed(0)} kcal`;
+      document.getElementById(
+        "perGlass"
+      ).textContent = `Per ${glass.toFixed(0)} ml serving: ~${perGlass.toFixed(0)} kcal`;
+      document.getElementById(
+        "perBottle"
+      ).textContent = `Per ${volume.toFixed(0)} ml bottle: ~${totalBottle.toFixed(0)} kcal`;
 
       results.style.display = "block";
     }
 
+    // Wire up events
     document.getElementById("calc").addEventListener("click", calculate);
-
-    // preset buttons
-    document.querySelectorAll(".quick-btn").forEach(btn => {
+    document.querySelectorAll(".preset-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const abv = btn.getAttribute("data-abv");
-        const volume = btn.getAttribute("data-volume");
-        const glass = btn.getAttribute("data-glass");
-        if (abv) document.getElementById("abv").value = abv;
-        if (volume) document.getElementById("volume").value = volume;
-        if (glass) document.getElementById("glass").value = glass;
+        const preset = btn.getAttribute("data-preset");
+        setPreset(preset);
       });
     });
 
