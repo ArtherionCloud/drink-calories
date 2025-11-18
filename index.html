@@ -330,10 +330,12 @@
           <h3>Calorie estimator</h3>
           <div class="badge">Prototype · v0.1</div>
         </div>
-  <label for="barcode">Lookup by barcode (optional)</label>
-  <div class="field-row">
-    <input id="barcode" type="text" placeholder="Scan or type barcode" />
-    <button type="button" id="lookupButton">Lookup</button>
+    <label for="barcode">Lookup by barcode (optional)</label>
+<div class="field-row">
+  <input id="barcode" type="text" placeholder="Scan or type barcode" />
+  <button type="button" id="lookupButton">LOOKUP</button>
+</div>
+    
   </div>
         <label for="abv">Alcohol by volume (ABV %)</label>
         <input id="abv" type="number" min="0" max="100" step="0.1" placeholder="e.g. 12" />
@@ -381,45 +383,137 @@
   </footer>
 
   <script>
-    function estimateSugarExtra(style, volumeMl) {
-      // crude sugar bump per bottle (kcal) based on style
-      let per100ml = 0; // kcal per 100ml
-      if (style === "offdry") per100ml = 12;  // mild sweetness
-      if (style === "sweet") per100ml = 30;   // dessert-like
-      return (per100ml * volumeMl) / 100;
+  // --- Helper: sugar estimate per bottle ---
+  function estimateSugarExtra(style, volumeMl) {
+    // crude sugar bump per bottle (kcal) based on style
+    let per100ml = 0; // kcal per 100ml
+    if (style === "offdry") per100ml = 12;  // mild sweetness
+    if (style === "sweet") per100ml = 30;   // dessert-like
+    return (per100ml * volumeMl) / 100;
+  }
+
+  // --- Helper: render results into the UI ---
+  function showResults(totalBottle, volume, glass) {
+    const results = document.getElementById("results");
+    const perGlass = totalBottle * (glass / volume);
+
+    document.getElementById(
+      "perGlass"
+    ).textContent = `Per ${glass.toFixed(0)} ml glass: ~${perGlass.toFixed(0)} kcal`;
+    document.getElementById(
+      "perBottle"
+    ).textContent = `Per ${volume.toFixed(0)} ml bottle: ~${totalBottle.toFixed(0)} kcal`;
+
+    results.style.display = "block";
+  }
+
+  // --- Click handler: "Estimate calories" button ---
+  function handleEstimateClick() {
+    const abv = parseFloat(document.getElementById("abv").value);
+    const volume = parseFloat(document.getElementById("volume").value);
+    const style = document.getElementById("style").value;
+    const glass = parseFloat(document.getElementById("glass").value) || 150;
+
+    if (isNaN(abv) || isNaN(volume) || abv <= 0 || volume <= 0) {
+      alert("Enter a valid ABV and bottle size.");
+      return;
     }
 
-    document.getElementById("year").textContent = new Date().getFullYear();
+    // Approximate alcohol calories:
+    // 1 ml pure alcohol ≈ 0.789 g; 1 g alcohol ≈ 7 kcal
+    // So ≈ abv% * volume_ml * 0.789 * 7 / 100
+    const alcoholCalories = (abv * volume * 0.789 * 7) / 100;
+    const sugarCalories = estimateSugarExtra(style, volume);
+    const totalBottle = alcoholCalories + sugarCalories;
 
-    document.getElementById("calc").addEventListener("click", function () {
-      const abv = parseFloat(document.getElementById("abv").value);
-      const volume = parseFloat(document.getElementById("volume").value);
-      const style = document.getElementById("style").value;
-      const glass = parseFloat(document.getElementById("glass").value) || 150;
+    showResults(totalBottle, volume, glass);
+  }
 
-      if (isNaN(abv) || isNaN(volume) || abv <= 0 || volume <= 0) {
-        alert("Enter a valid ABV and bottle size.");
+  // --- Click handler: "LOOKUP" button ---
+  async function handleLookupClick() {
+    const barcodeInput = document.getElementById("barcode");
+    const raw = barcodeInput.value.trim();
+
+    if (!raw) {
+      alert("Enter a barcode first.");
+      return;
+    }
+
+    try {
+      // Call the Vercel API route, e.g. /api/lookup?barcode=123...
+      const res = await fetch(`/api/lookup?barcode=${encodeURIComponent(raw)}`);
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          alert("Product not found in database yet.");
+          return;
+        }
+        const err = await res.json().catch(() => ({}));
+        console.error("Lookup error:", err);
+        alert("Error looking up product.");
         return;
       }
 
-      // Approximate alcohol calories:
-      // 1 ml pure alcohol ≈ 0.789 g; 1 g alcohol ≈ 7 kcal
-      // So ≈ abv% * volume_ml * 0.789 * 7 / 100
-      const alcoholCalories = (abv * volume * 0.789 * 7) / 100;
-      const sugarCalories = estimateSugarExtra(style, volume);
-      const totalBottle = alcoholCalories + sugarCalories;
-      const perGlass = totalBottle * (glass / volume);
+      const data = await res.json();
+      console.log("Lookup response:", data);
 
-      const results = document.getElementById("results");
-      document.getElementById(
-        "perGlass"
-      ).textContent = `Per ${glass.toFixed(0)} ml glass: ~${perGlass.toFixed(0)} kcal`;
-      document.getElementById(
-        "perBottle"
-      ).textContent = `Per ${volume.toFixed(0)} ml bottle: ~${totalBottle.toFixed(0)} kcal`;
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
 
-      results.style.display = "block";
-    });
-  </script>
+      const product = data.product || data;
+      if (!product) {
+        alert("No product data returned.");
+        return;
+      }
+
+      // Fill ABV and style if available
+      if (product.abv !== null && product.abv !== undefined) {
+        document.getElementById("abv").value = product.abv;
+      }
+      if (product.style) {
+        document.getElementById("style").value = product.style;
+      }
+
+      // If you stored calories_bottle, use it directly
+      const volumeInput = document.getElementById("volume");
+      const glassInput = document.getElementById("glass");
+
+      const volume = parseFloat(volumeInput.value) || 750; // default 750 ml
+      const glass = parseFloat(glassInput.value) || 150;   // default 150 ml
+
+      if (product.calories_bottle && Number(product.calories_bottle) > 0) {
+        const totalBottle = Number(product.calories_bottle);
+        showResults(totalBottle, volume, glass);
+      } else {
+        // Fall back to formula using ABV + style
+        if (!product.abv) {
+          alert("Product found, but no calorie data or ABV stored. Fill fields manually.");
+          return;
+        }
+        const alcoholCalories = (product.abv * volume * 0.789 * 7) / 100;
+        const sugarCalories = estimateSugarExtra(product.style || "dry", volume);
+        const totalBottle = alcoholCalories + sugarCalories;
+        showResults(totalBottle, volume, glass);
+      }
+    } catch (e) {
+      console.error("Unexpected lookup error:", e);
+      alert("Unexpected error looking up barcode.");
+    }
+  }
+
+  // --- Wire up buttons once DOM is ready ---
+  document.addEventListener("DOMContentLoaded", function () {
+    const yearSpan = document.getElementById("year");
+    if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+
+    const calcBtn = document.getElementById("calc");
+    const lookupBtn = document.getElementById("lookupButton");
+
+    if (calcBtn) calcBtn.addEventListener("click", handleEstimateClick);
+    if (lookupBtn) lookupBtn.addEventListener("click", handleLookupClick);
+  });
+</script>
 </body>
 </html>
