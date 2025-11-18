@@ -1,5 +1,9 @@
-export default async function handler(req, res) {
-  const { barcode } = req.query;
+// api/lookup.js
+
+const fetch = require("node-fetch"); // CommonJS import
+
+module.exports = async (req, res) => {
+  const barcode = req.query.barcode;
 
   if (!barcode) {
     return res.status(400).json({ error: "Missing barcode parameter" });
@@ -9,35 +13,33 @@ export default async function handler(req, res) {
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    return res
-      .status(500)
-      .json({ error: "Supabase environment variables not configured" });
+    return res.status(500).json({ error: "Missing Supabase environment vars" });
   }
 
   const url = `${SUPABASE_URL}/rest/v1/products?barcode=eq.${encodeURIComponent(
     barcode
   )}&select=*`;
 
-  const response = await fetch(url, {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
 
-  if (!response.ok) {
-    const text = await response.text();
-    return res.status(500).json({ error: "Supabase error", detail: text });
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(500).json({ error: "Supabase error", detail: text });
+    }
+
+    const data = await response.json();
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    return res.status(200).json({ product: data[0] });
+  } catch (err) {
+    return res.status(500).json({ error: "Unexpected error", detail: err.toString() });
   }
-
-  const data = await response.json();
-
-  if (!data || data.length === 0) {
-    return res.status(404).json({ error: "Product not found" });
-  }
-
-  const product = data[0];
-  res.status(200).json({ product });
-}
-
-add lookup api
+};
