@@ -1,72 +1,71 @@
-// api/lookup.js
-// Simple Vercel serverless function that reads a product by barcode
-// from the Supabase "products" table using the REST API.
-
 export default async function handler(req, res) {
   try {
-    // 1. Read barcode from query string: /api/lookup?barcode=123
-    const { barcode } = req.query;
+    // 1. Read the barcode from query string
+    const barcode = req.query.barcode;
 
-    if (!barcode || String(barcode).trim() === "") {
-      return res.status(400).json({ error: "Missing barcode parameter" });
+    if (!barcode) {
+      return res.status(400).json({
+        error: "Missing barcode parameter. Example: /api/lookup?barcode=1234567"
+      });
     }
 
-    // 2. Read Supabase environment variables set in Vercel
+    // 2. Load Supabase environment variables from Vercel
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      // If you see this in the browser, env vars aren’t wired correctly
       return res.status(500).json({
-        error: "Supabase environment variables not configured",
+        error: "Supabase credentials missing",
+        details: "Check Vercel → Project Settings → Environment Variables"
       });
     }
 
-    // 3. Build the REST URL for the "products" table
-    // Ensure no trailing / on SUPABASE_URL
-    const baseUrl = SUPABASE_URL.replace(/\/+$/, "");
-    const url = new URL("/rest/v1/products", baseUrl);
+    // 3. Build the Supabase REST URL
+    // EXACT TEXT MATCH on barcode
+    const url =
+      `${SUPABASE_URL}/rest/v1/products` +
+      `?barcode=eq.${encodeURIComponent(barcode)}` +
+      `&select=*`;
 
-    // Equivalent to: ?barcode=eq.123456&select=*
-    url.searchParams.set("barcode", `eq.${barcode}`);
-    url.searchParams.set("select", "*");
-
-    // 4. Call Supabase REST using the built-in fetch (Node 18 on Vercel)
-    const response = await fetch(url.toString(), {
-      method: "GET",
+    // 4. Make the request to Supabase
+    const response = await fetch(url, {
       headers: {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
       },
     });
 
-    // If Supabase itself failed, bubble up details
+    // 5. Handle Supabase errors
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
+      const text = await response.text();
       return res.status(500).json({
-        error: "Supabase request failed",
-        status: response.status,
-        detail: text,
+        error: "Supabase query failed",
+        details: text
       });
     }
 
+    // 6. Parse the result
     const data = await response.json();
 
-    // 5. Handle “not found”
-    if (!Array.isArray(data) || data.length === 0) {
-      return res.status(404).json({ error: "Product not found" });
+    // 7. No match found
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        error: "Product not found",
+        searched_barcode: barcode
+      });
     }
 
-    // 6. Return the first matching product
-    const product = data[0];
-    return res.status(200).json({ product });
+    // 8. Return the FIRST MATCH
+    return res.status(200).json({
+      success: true,
+      product: data[0]
+    });
+
   } catch (err) {
-    // 7. Catch any unexpected errors
-    console.error("lookup handler error:", err);
+    // 9. Catch unexpected errors
     return res.status(500).json({
-      error: "Internal server error",
-      detail: err?.message || String(err),
+      error: "Unexpected server error",
+      details: err.message
     });
   }
 }
